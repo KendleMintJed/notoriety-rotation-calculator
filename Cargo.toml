@@ -1,0 +1,22 @@
+[workspace]
+members = [
+  "calculator"
+]
+resolver="3"
+
+# Defines a size-optimized profile for the WASM bundle in release mode
+[profile.wasm-release]
+inherits = "release"
+opt-level = 'z'
+lto = true
+codegen-units = 1
+panic = "abort"
+
+[package]
+name = "notoriety-rotation-calculator"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+leptos = { version = "0.8", features = ["csr", "nightly"] }
+calculator = { path = "./calculator" }
