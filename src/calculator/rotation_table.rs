@@ -80,6 +80,15 @@ pub fn RotationTable(
                 <td>XP / Min</td>
                 <td>Cum. XP</td>
             </tr>
+            <tr><button
+                on:click=move |_| {
+                    let store = store();
+                    let (default_heist, default_strat) = store.get_default();
+                    let default = (default_heist.clone(), default_strat.clone());
+                    set_rotation.update(|rotation| rotation.0.push(default));
+                }
+            >"+"
+            </button></tr>
             {move || {
                 let rotation = rotation();
                 let multipliers = multipliers();
@@ -126,15 +135,6 @@ pub fn RotationTable(
                     }
                 }).collect::<Vec<_>>()}
             }
-            <tr><button
-                on:click=move |_| {
-                    let store = store();
-                    let (default_heist, default_strat) = store.get_default();
-                    let default = (default_heist.clone(), default_strat.clone());
-                    set_rotation.update(|rotation| rotation.0.push(default));
-                }
-            >"+"
-            </button></tr>
         </tbody></table>
     }
 }
