@@ -21,7 +21,7 @@ impl HeistPreset {
 pub struct StrategyPreset {
     pub id: u32,
     pub name: String,
-    pub level_one: bool,
+    pub min_skills: u8,
     pub strategy: Strategy,
 }
 
@@ -96,7 +96,7 @@ impl PresetStore {
                     StrategyPreset {
                         id: generate_id(),
                         name: String::from("Full Sweep"),
-                        level_one: false,
+                        min_skills: 100,
                         strategy: Strategy {
                             base_cash: 1_079_550,
                             base_xp: 840_000,
@@ -108,7 +108,7 @@ impl PresetStore {
                     StrategyPreset {
                         id: generate_id(),
                         name: String::from("Minimum"),
-                        level_one: false,
+                        min_skills: 100,
                         strategy: Strategy {
                             base_cash: 539_550,
                             base_xp: 840_000,
@@ -125,18 +125,32 @@ impl PresetStore {
                     name: String::from("Shadow Raid"),
                     stealth_only: true,
                 },
-                vec![StrategyPreset {
-                    id: generate_id(),
-                    name: String::from("16+ Bags"),
-                    level_one: false,
-                    strategy: Strategy {
-                        base_cash: 4_051_539,
-                        base_xp: 784_000,
-                        in_game_time: 75.0,
-                        stealth: false,
-                        crew: Crew(4),
+                vec![
+                    StrategyPreset {
+                        id: generate_id(),
+                        name: String::from("16+ Bags"),
+                        min_skills: 70,
+                        strategy: Strategy {
+                            base_cash: 4_051_539,
+                            base_xp: 784_000,
+                            in_game_time: 75.0,
+                            stealth: false,
+                            crew: Crew(4),
+                        },
                     },
-                }],
+                    StrategyPreset {
+                        id: generate_id(),
+                        name: String::from("16+ Bags"),
+                        min_skills: 32,
+                        strategy: Strategy {
+                            base_cash: 4_051_539,
+                            base_xp: 784_000,
+                            in_game_time: 85.0,
+                            stealth: false,
+                            crew: Crew(4),
+                        },
+                    },
+                ],
             ),
             (
                 HeistPreset {
@@ -148,7 +162,7 @@ impl PresetStore {
                     StrategyPreset {
                         id: generate_id(),
                         name: String::from("20+ Bags"),
-                        level_one: false,
+                        min_skills: 100,
                         strategy: Strategy {
                             base_cash: 3_877_135,
                             base_xp: 843_100,
@@ -160,7 +174,7 @@ impl PresetStore {
                     StrategyPreset {
                         id: generate_id(),
                         name: String::from("Minimum"),
-                        level_one: true,
+                        min_skills: 33,
                         strategy: Strategy {
                             base_cash: 485_000,
                             base_xp: 843_100,

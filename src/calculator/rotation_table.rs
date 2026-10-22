@@ -1,7 +1,8 @@
+use calculator::InfamyPerks;
 use leptos::prelude::*;
 
 use ::calculator::{
-    GeneralMultipliers, Heist, Rewards,
+    GeneralMultipliers, Heist, Level, Rewards,
     data::{HeistPreset, PresetStore, Rotation, StrategyPreset},
 };
 
@@ -16,6 +17,7 @@ struct RotationData {
     rewards: Rewards,
     cum_rewards: Rewards,
     cum_time: f32,
+    cum_level: Level,
 }
 
 fn rotation_data(
@@ -36,6 +38,7 @@ fn rotation_data(
                 rewards: rewards.clone(),
                 cum_rewards: rewards,
                 cum_time: 0.0,
+                cum_level: Level::from_xp(0),
             }
         })
         .scan(
@@ -48,6 +51,7 @@ fn rotation_data(
 
                 rotation_data.cum_rewards = reward_state.clone();
                 rotation_data.cum_time = *time_state;
+                rotation_data.cum_level = Level::from_xp(reward_state.xp);
 
                 Some(rotation_data)
             },
@@ -59,14 +63,18 @@ pub fn RotationTable(
     rotation: ReadSignal<Rotation>,
     set_rotation: WriteSignal<Rotation>,
     multipliers: ReadSignal<GeneralMultipliers>,
+    infamy_skills: ReadSignal<InfamyPerks>,
     store: ReadSignal<PresetStore>,
 ) -> impl IntoView {
     view! {
         <table><tbody>
             <tr>
                 <td>Edit</td>
+                <td>#</td>
                 <td>Heist</td>
                 <td>Strategy</td>
+                <td>Level</td>
+                <td>Skills</td>
                 <td>Time</td>
                 <td>Cum. Time</td>
                 <td>Stealth</td>
@@ -80,20 +88,28 @@ pub fn RotationTable(
                 <td>XP / Min</td>
                 <td>Cum. XP</td>
             </tr>
-            <tr><button
-                on:click=move |_| {
-                    let store = store();
-                    let (default_heist, default_strat) = store.get_default();
-                    let default = (default_heist.clone(), default_strat.clone());
-                    set_rotation.update(|rotation| rotation.0.push(default));
-                }
-            >"+"
-            </button></tr>
+            <tr>
+                <td><button
+                    on:click=move |_| {
+                        let store = store();
+                        let (default_heist, default_strat) = store.get_default();
+                        let default = (default_heist.clone(), default_strat.clone());
+                        set_rotation.update(|rotation| rotation.0.push(default));
+                    }
+                >"+"</button></td>
+                <td>0.</td>
+                <td>Pre-Heist</td>
+                <td></td>
+                <td>lvl1</td>
+                <td>{move || infamy_skills().get_bonus() as u8 + 1}</td>
+            </tr>
             {move || {
                 let rotation = rotation();
                 let multipliers = multipliers();
+                let infamy_skills = infamy_skills();
                 rotation_data(&rotation, &multipliers).map(|rotation_data| {
                     let strat = rotation_data.heist.get_strategy();
+                    let level = rotation_data.cum_level;
                     let repeat_percent = (rotation_data.heist.get_multipliers().repeat_bonus.get_bonus() * 100.0) as u32;
 
                     fn display_time(time: f32) -> String {
@@ -112,6 +128,7 @@ pub fn RotationTable(
                                     }
                                 >^</button>
                             </td>
+                            <td>{rotation_data.index + 1}.</td>
                             <SelectHeist
                                 heist_preset=rotation_data.heist_preset
                                 strategy_preset=rotation_data.strategy_preset
@@ -119,6 +136,8 @@ pub fn RotationTable(
                                 update=move |heist_preset, strategy_preset| set_rotation
                                     .update(|rot| rot.0[rotation_data.index] = (heist_preset, strategy_preset))
                             />
+                            <td>lvl{level.get_level()}</td>
+                            <td>{level.get_skill_points() + infamy_skills.get_bonus() as u8}pts</td>
                             <td>{display_time(strat.in_game_time)}</td>
                             <td>{display_time(rotation_data.cum_time)}</td>
                             <td>{strat.stealth}</td>

@@ -45,7 +45,7 @@ pub fn SelectHeist(
 
         >
             {move || store().get_heist_strategies(heist_preset.id).unwrap().1.iter().map(|strategy_preset| view! {
-                <option value=strategy_preset.id>{strategy_preset.name.clone()}</option>
+                <option value=strategy_preset.id>{strategy_preset.name.clone()}" ("{strategy_preset.min_skills}"pts)"</option>
             }).collect::<Vec<_>>()}
         </select></td>
     }
