@@ -1,5 +1,6 @@
 pub mod data;
 
+#[derive(Clone)]
 pub struct InfamyPerk(u8);
 
 impl InfamyPerk {
@@ -8,6 +9,13 @@ impl InfamyPerk {
     }
 }
 
+impl Default for InfamyPerk {
+    fn default() -> Self {
+        InfamyPerk(8)
+    }
+}
+
+#[derive(Clone)]
 pub enum InfamyPerks {
     Cash(InfamyPerk),
     Xp(InfamyPerk),
@@ -30,6 +38,14 @@ impl InfamyPerks {
                 let five_buffs = level.0.checked_sub(4).unwrap_or(0);
                 (three_buffs * 3 + five_buffs * 5).into()
             }
+        }
+    }
+
+    pub fn get_level(self: &Self) -> u8 {
+        match self {
+            Self::Cash(perk) => perk.0,
+            Self::Xp(perk) => perk.0,
+            Self::SkillPoints(perk) => perk.0,
         }
     }
 }
@@ -74,6 +90,7 @@ impl RepeatBonus {
     }
 }
 
+#[derive(Clone)]
 pub struct GeneralMultipliers {
     pub group_boost: bool,
 
@@ -87,9 +104,54 @@ pub struct GeneralMultipliers {
     pub xp_infamy_boost: bool,
 }
 
+fn mul(lhs: bool, rhs: f32) -> f32 {
+    if lhs { rhs } else { 0.0 }
+}
+
+impl GeneralMultipliers {
+    pub fn get_cash_boost(self: &Self) -> f32 {
+        mul(self.group_boost, 0.15)
+            + mul(self.cash_boost, 1.0)
+            + mul(self.cash_gamepass, 1.0)
+            + self.cash_infamy_perks.get_bonus()
+    }
+
+    pub fn get_xp_boost(self: &Self) -> f32 {
+        mul(self.group_boost, 0.15)
+            + mul(self.xp_boost, 1.0)
+            + mul(self.xp_gamepass, 1.0)
+            + self.xp_infamy_perks.get_bonus()
+            + mul(self.xp_infamy_boost, 0.15)
+    }
+}
+
+impl Default for GeneralMultipliers {
+    fn default() -> Self {
+        GeneralMultipliers {
+            group_boost: true,
+            cash_boost: false,
+            cash_gamepass: false,
+            cash_infamy_perks: InfamyPerks::Cash(InfamyPerk::default()),
+            xp_boost: false,
+            xp_gamepass: false,
+            xp_infamy_perks: InfamyPerks::Xp(InfamyPerk::default()),
+            xp_infamy_boost: false,
+        }
+    }
+}
+
 pub struct SpesificMultipliers {
     pub repeat_bonus: RepeatBonus,
     pub stealth_bonus: bool,
+}
+
+impl SpesificMultipliers {
+    pub fn get_cash_boost(self: &Self) -> f32 {
+        self.repeat_bonus.get_bonus()
+    }
+    pub fn get_xp_boost(self: &Self) -> f32 {
+        self.repeat_bonus.get_bonus() + mul(self.stealth_bonus, 0.1)
+    }
 }
 
 pub struct Multipliers {
@@ -129,29 +191,13 @@ impl Heist {
         }
     }
     pub fn get_reward(self: &Self, general: &GeneralMultipliers) -> Rewards {
-        fn mul(lhs: bool, rhs: f32) -> f32 {
-            if lhs { rhs } else { 0.0 }
-        }
-
         let spesific = &self.multipliers;
         let strategy = &self.strategy;
 
-        let cash_multiplier = 1.0
-            + mul(general.group_boost, 0.15)
-            + mul(general.cash_boost, 1.0)
-            + mul(general.cash_gamepass, 1.0)
-            + general.cash_infamy_perks.get_bonus()
-            + spesific.repeat_bonus.get_bonus();
+        let cash_multiplier = 1.0 + general.get_cash_boost() + spesific.get_cash_boost();
 
-        let xp_multiplier = 1.0
-            + mul(general.group_boost, 0.15)
-            + strategy.crew.get_bonus()
-            + mul(general.xp_boost, 1.0)
-            + mul(general.xp_gamepass, 1.0)
-            + general.xp_infamy_perks.get_bonus()
-            + mul(general.xp_infamy_boost, 0.15)
-            + spesific.repeat_bonus.get_bonus()
-            + mul(spesific.stealth_bonus, 0.1);
+        let xp_multiplier =
+            1.0 + general.get_xp_boost() + spesific.get_xp_boost() + strategy.crew.get_bonus();
 
         let cash = (strategy.base_cash as f32 * cash_multiplier) as u32;
         let xp = (strategy.base_xp as f32 * xp_multiplier) as u32;

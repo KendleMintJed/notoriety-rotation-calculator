@@ -208,4 +208,8 @@ impl PresetStore {
             .find(|(heist_preset, _)| heist_preset.id == heist_id)
             .ok_or(())?)
     }
+
+    pub fn get_default(self: &Self) -> (&HeistPreset, &StrategyPreset) {
+        (&self.data[0].0, &self.data[0].1[0])
+    }
 }
