@@ -64,6 +64,7 @@ pub fn RotationTable(
     view! {
         <table><tbody>
             <tr>
+                <td>Edit</td>
                 <td>Heist</td>
                 <td>Strategy</td>
                 <td>Time</td>
@@ -91,6 +92,17 @@ pub fn RotationTable(
                     }
                     view! {
                         <tr>
+                            <td>
+                                <button
+                                    on:click=move |_| set_rotation.update(|rotation| {rotation.0.remove(rotation_data.index);})
+                                >x</button>
+                                <button
+                                    on:click=move |_| {
+                                        let i = rotation_data.index;
+                                        if i > 0 {set_rotation.update(|rotation| rotation.0.swap(i, i-1))};
+                                    }
+                                >^</button>
+                            </td>
                             <SelectHeist
                                 heist_preset=rotation_data.heist_preset
                                 strategy_preset=rotation_data.strategy_preset
