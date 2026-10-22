@@ -73,16 +73,16 @@ impl Rotation {
 
 #[derive(Clone, Default)]
 pub struct PresetStore {
-    id_counter: u32,
+    _id_counter: u32,
     data: Vec<(HeistPreset, Vec<StrategyPreset>)>,
 }
 
 impl PresetStore {
     pub fn generate_default_presets() -> Self {
-        let mut id_counter = 0;
+        let mut _id_counter = 0;
         let mut generate_id = || {
-            let current_id = id_counter;
-            id_counter += 1;
+            let current_id = _id_counter;
+            _id_counter += 1;
             current_id
         };
         let data = vec![
@@ -172,7 +172,7 @@ impl PresetStore {
                 ],
             ),
         ];
-        PresetStore { id_counter, data }
+        PresetStore { _id_counter, data }
     }
 
     pub fn get_data(self: &Self) -> &Vec<(HeistPreset, Vec<StrategyPreset>)> {

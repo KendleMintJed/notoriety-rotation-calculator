@@ -1,5 +1,3 @@
-#![feature(const_heap)]
-
 pub mod data;
 
 pub struct InfamyPerk(u8);
@@ -53,7 +51,7 @@ impl Crew {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RepeatBonus(u8);
 
 impl RepeatBonus {
@@ -108,7 +106,7 @@ pub struct Strategy {
     pub crew: Crew,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Rewards {
     pub cash: u32,
     pub xp: u32,
@@ -173,22 +171,16 @@ mod tests {
     use super::*;
 
     #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-
-    #[test]
     fn test_nc_fs_generation() {
         let strategy = Strategy {
             base_xp: 840_000,
             base_cash: 1_079_550,
             in_game_time: 24.0,
             stealth: true,
+            crew: Crew(3),
         };
         let general_multipliers = GeneralMultipliers {
             group_boost: true,
-            crew_bonus: Crew(3),
 
             cash_boost: true,
             cash_gamepass: true,
