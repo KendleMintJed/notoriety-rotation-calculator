@@ -178,11 +178,6 @@ impl SpesificMultipliers {
     }
 }
 
-pub struct Multipliers {
-    pub general: GeneralMultipliers,
-    pub spesific: SpesificMultipliers,
-}
-
 #[derive(Clone)]
 pub struct Strategy {
     pub base_cash: u32,
