@@ -72,9 +72,6 @@ pub fn SelectMultipliers(
                 on:input:target=move |ev| multipliers.update(|multipliers| multipliers.xp_infamy_boost = ev.target().checked())
             />"Infamy Xp Boost (15%)"<br/>
             <br/>
-            "Total Cash Boost: "{move || (multipliers().get_cash_boost()*100.0) as u32}%<br/>
-            "Total XP Boost: "{move || (multipliers().get_xp_boost()*100.0) as u32}%<br/>
-            <br/>
             <select
                 prop:value=move || infamy_skills().get_level()
                 on:change:target=move |ev| infamy_skills.set(InfamyPerks::SkillPoints(InfamyPerk::new(
@@ -91,7 +88,10 @@ pub fn SelectMultipliers(
                 <option value=6>6</option>
                 <option value=7>7</option>
                 <option value=8>8</option>
-            </select>"Infamy Skill Perks"
+            </select>"Infamy Skill Perks"<br/>
+            <br/>
+            "Total Cash Boost: +"{move || (multipliers().get_cash_boost()*100.0) as u32}%<br/>
+            "Total XP Boost: +"{move || (multipliers().get_xp_boost()*100.0) as u32}%
         </div>
     }
 }
