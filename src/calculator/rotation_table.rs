@@ -1,8 +1,7 @@
-use calculator::InfamyPerks;
 use leptos::prelude::*;
 
 use ::calculator::{
-    GeneralMultipliers, Heist, Level, Rewards,
+    GeneralMultipliers, Heist, Level, Rewards, SkillPerk,
     data::{HeistPreset, PresetStore, Rotation, StrategyPreset},
 };
 
@@ -63,7 +62,7 @@ pub fn RotationTable(
     rotation: ReadSignal<Rotation>,
     set_rotation: WriteSignal<Rotation>,
     multipliers: ReadSignal<GeneralMultipliers>,
-    infamy_skills: ReadSignal<InfamyPerks>,
+    infamy_skills: ReadSignal<SkillPerk>,
     store: ReadSignal<PresetStore>,
 ) -> impl IntoView {
     view! {

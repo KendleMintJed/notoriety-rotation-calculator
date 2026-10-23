@@ -1,11 +1,11 @@
 use leptos::prelude::*;
 
-use calculator::{GeneralMultipliers, InfamyPerk, InfamyPerks};
+use calculator::{CashPerk, GeneralMultipliers, SkillPerk, XpPerk};
 
 #[component]
 pub fn SelectMultipliers(
     multipliers: RwSignal<GeneralMultipliers>,
-    infamy_skills: RwSignal<InfamyPerks>,
+    infamy_skills: RwSignal<SkillPerk>,
 ) -> impl IntoView {
     view! {
         <div>
@@ -25,9 +25,9 @@ pub fn SelectMultipliers(
             <select
                 prop:value=move || multipliers().cash_infamy_perks.get_level()
                 on:change:target=move |ev| multipliers.update(
-                    |multipliers| multipliers.cash_infamy_perks = InfamyPerks::Cash(InfamyPerk::new(
-                        ev.target().value().parse::<u8>().unwrap()).unwrap()
-                    )
+                    |multipliers| multipliers.cash_infamy_perks = CashPerk::new(
+                        ev.target().value().parse::<u8>().unwrap()
+                    ).unwrap()
                 )
             >
                 <option value=0>0</option>
@@ -52,9 +52,9 @@ pub fn SelectMultipliers(
             <select
                 prop:value=move || multipliers().xp_infamy_perks.get_level()
                 on:change:target=move |ev| multipliers.update(
-                    |multipliers| multipliers.xp_infamy_perks = InfamyPerks::SkillPoints(InfamyPerk::new(
-                        ev.target().value().parse::<u8>().unwrap()).unwrap()
-                    )
+                    |multipliers| multipliers.xp_infamy_perks = XpPerk::new(
+                        ev.target().value().parse::<u8>().unwrap()
+                    ).unwrap()
                 )
             >
                 <option value=0>0</option>
@@ -74,9 +74,9 @@ pub fn SelectMultipliers(
             <br/>
             <select
                 prop:value=move || infamy_skills().get_level()
-                on:change:target=move |ev| infamy_skills.set(InfamyPerks::SkillPoints(InfamyPerk::new(
-                        ev.target().value().parse::<u8>().unwrap()).unwrap()
-                    )
+                on:change:target=move |ev| infamy_skills.set(SkillPerk::new(
+                        ev.target().value().parse::<u8>().unwrap()
+                    ).unwrap()
                 )
             >
                 <option value=0>0</option>

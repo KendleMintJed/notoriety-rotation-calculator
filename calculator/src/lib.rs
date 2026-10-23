@@ -1,9 +1,13 @@
 pub mod data;
 
 #[derive(Clone)]
-pub struct InfamyPerk(u8);
+struct InfamyPerk(u8);
 
 impl InfamyPerk {
+    pub fn get_level(self: &Self) -> u8 {
+        self.0
+    }
+
     pub fn new(level: u8) -> Result<Self, ()> {
         if level > 8 { Err(()) } else { Ok(Self(level)) }
     }
@@ -15,38 +19,58 @@ impl Default for InfamyPerk {
     }
 }
 
-#[derive(Clone)]
-pub enum InfamyPerks {
-    Cash(InfamyPerk),
-    Xp(InfamyPerk),
-    SkillPoints(InfamyPerk),
-}
+#[derive(Clone, Default)]
+pub struct CashPerk(InfamyPerk);
 
-impl InfamyPerks {
-    pub fn get_bonus(self: &Self) -> f32 {
-        match self {
-            InfamyPerks::Cash(level) => (level.0 as f32) / 10.0,
-
-            InfamyPerks::Xp(level) => {
-                let five_buffs: f32 = std::cmp::min(level.0, 4).into();
-                let ten_buffs: f32 = level.0.checked_sub(4).unwrap_or(0).into();
-                five_buffs * 0.05 + ten_buffs * 0.1
-            }
-
-            InfamyPerks::SkillPoints(level) => {
-                let three_buffs = std::cmp::min(level.0, 4);
-                let five_buffs = level.0.checked_sub(4).unwrap_or(0);
-                (three_buffs * 3 + five_buffs * 5).into()
-            }
-        }
+impl CashPerk {
+    pub fn new(level: u8) -> Result<Self, ()> {
+        Ok(Self(InfamyPerk::new(level)?))
     }
 
     pub fn get_level(self: &Self) -> u8 {
-        match self {
-            Self::Cash(perk) => perk.0,
-            Self::Xp(perk) => perk.0,
-            Self::SkillPoints(perk) => perk.0,
-        }
+        self.0.get_level()
+    }
+
+    pub fn get_bonus(self: &Self) -> f32 {
+        (self.0.0 as f32) / 10.0
+    }
+}
+
+#[derive(Clone, Default)]
+pub struct XpPerk(InfamyPerk);
+
+impl XpPerk {
+    pub fn new(level: u8) -> Result<Self, ()> {
+        Ok(Self(InfamyPerk::new(level)?))
+    }
+
+    pub fn get_level(self: &Self) -> u8 {
+        self.0.get_level()
+    }
+
+    pub fn get_bonus(self: &Self) -> f32 {
+        let five_buffs: f32 = std::cmp::min(self.0.0, 4).into();
+        let ten_buffs: f32 = self.0.0.checked_sub(4).unwrap_or(0).into();
+        five_buffs * 0.05 + ten_buffs * 0.1
+    }
+}
+
+#[derive(Clone, Default)]
+pub struct SkillPerk(InfamyPerk);
+
+impl SkillPerk {
+    pub fn new(level: u8) -> Result<Self, ()> {
+        Ok(Self(InfamyPerk::new(level)?))
+    }
+
+    pub fn get_level(self: &Self) -> u8 {
+        self.0.get_level()
+    }
+
+    pub fn get_bonus(self: &Self) -> u8 {
+        let three_buffs = std::cmp::min(self.0.0, 4);
+        let five_buffs = self.0.0.checked_sub(4).unwrap_or(0);
+        three_buffs * 3 + five_buffs * 5
     }
 }
 
@@ -96,11 +120,11 @@ pub struct GeneralMultipliers {
 
     pub cash_boost: bool,
     pub cash_gamepass: bool,
-    pub cash_infamy_perks: InfamyPerks,
+    pub cash_infamy_perks: CashPerk,
 
     pub xp_boost: bool,
     pub xp_gamepass: bool,
-    pub xp_infamy_perks: InfamyPerks,
+    pub xp_infamy_perks: XpPerk,
     pub xp_infamy_boost: bool,
 }
 
@@ -131,10 +155,10 @@ impl Default for GeneralMultipliers {
             group_boost: true,
             cash_boost: false,
             cash_gamepass: false,
-            cash_infamy_perks: InfamyPerks::Cash(InfamyPerk::default()),
+            cash_infamy_perks: CashPerk::default(),
             xp_boost: false,
             xp_gamepass: false,
-            xp_infamy_perks: InfamyPerks::Xp(InfamyPerk::default()),
+            xp_infamy_perks: XpPerk::default(),
             xp_infamy_boost: false,
         }
     }
@@ -304,7 +328,7 @@ mod tests {
     #[test]
     fn test_from_level() {
         let level = Level::from_level(100);
-        assert_eq!(level.0, 27_181_305)
+        assert_eq!(level.xp, 27_181_305)
     }
 
     #[test]
@@ -321,11 +345,11 @@ mod tests {
 
             cash_boost: true,
             cash_gamepass: true,
-            cash_infamy_perks: InfamyPerks::Cash(InfamyPerk(8)),
+            cash_infamy_perks: CashPerk::new(8).unwrap(),
 
             xp_boost: true,
             xp_gamepass: true,
-            xp_infamy_perks: InfamyPerks::Xp(InfamyPerk(8)),
+            xp_infamy_perks: XpPerk::new(8).unwrap(),
             xp_infamy_boost: false,
         };
         let spesific_multipliers = SpesificMultipliers {

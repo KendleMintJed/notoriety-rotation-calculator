@@ -1,4 +1,4 @@
-use calculator::{GeneralMultipliers, InfamyPerk, InfamyPerks};
+use calculator::{GeneralMultipliers, SkillPerk};
 use leptos::prelude::*;
 
 use ::calculator::data::{PresetStore, Rotation};
@@ -14,7 +14,7 @@ pub fn Calculator() -> impl IntoView {
     let (rotation, set_rotation) = signal(Rotation::default());
     let multipliers = RwSignal::new(GeneralMultipliers::default());
     let (store, _) = signal(PresetStore::generate_default_presets());
-    let infamy_skills = RwSignal::new(InfamyPerks::SkillPoints(InfamyPerk::new(8).unwrap()));
+    let infamy_skills = RwSignal::new(SkillPerk::default());
 
     view! {
         <SelectMultipliers multipliers infamy_skills />
