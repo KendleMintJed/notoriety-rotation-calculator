@@ -1,7 +1,9 @@
-use calculator::{GeneralMultipliers, SkillPerk};
+use calculator::{
+    Rotation,
+    bonuses::{GeneralMultipliers, perks::SkillPerk},
+    presets::PresetStore,
+};
 use leptos::prelude::*;
-
-use ::calculator::data::{PresetStore, Rotation};
 
 mod select_multipliers;
 use select_multipliers::SelectMultipliers;

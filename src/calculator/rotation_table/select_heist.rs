@@ -1,6 +1,6 @@
 use leptos::prelude::*;
 
-use calculator::data::{HeistPreset, PresetStore, StrategyPreset};
+use calculator::presets::{HeistPreset, PresetStore, StrategyPreset};
 use std::rc::Rc;
 
 #[component]

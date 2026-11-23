@@ -1,75 +1,8 @@
-use crate::{Crew, GeneralMultipliers, Heist, RepeatBonus, Rewards, Strategy};
-
-#[derive(Clone)]
-pub struct HeistPreset {
-    pub id: u32,
-    pub name: String,
-    pub stealth_only: bool,
-}
-
-impl HeistPreset {
-    pub fn to_heist(
-        self: &Self,
-        strategy_preset: StrategyPreset,
-        repeat_bonus: RepeatBonus,
-    ) -> Heist {
-        Heist::new(strategy_preset.strategy, self.stealth_only, repeat_bonus)
-    }
-}
-
-#[derive(Clone)]
-pub struct StrategyPreset {
-    pub id: u32,
-    pub name: String,
-    pub min_skills: u8,
-    pub strategy: Strategy,
-}
-
-#[derive(Clone, Default)]
-pub struct Rotation(pub Vec<(HeistPreset, StrategyPreset)>);
-
-impl Rotation {
-    pub fn to_repeats(
-        self: &Self,
-    ) -> impl Iterator<Item = (HeistPreset, StrategyPreset, RepeatBonus)> {
-        self.0
-            .iter()
-            .enumerate()
-            .map(|(i, (heist_preset, strategy_preset))| {
-                let mut repeat = 0;
-                for j in 1..=7 {
-                    if heist_preset.id
-                        == self.0[(i as i32 - j).wrapping_rem_euclid(self.0.len() as i32) as usize]
-                            .0
-                            .id
-                    {
-                        repeat += 1;
-                    }
-                }
-
-                // Never out of range
-                (
-                    heist_preset.clone(),
-                    strategy_preset.clone(),
-                    RepeatBonus(repeat),
-                )
-            })
-    }
-
-    pub fn to_heists(self: &Self) -> impl Iterator<Item = Heist> {
-        self.to_repeats()
-            .map(|(heist_preset, strategy_preset, repeat_bonus)| {
-                heist_preset.to_heist(strategy_preset, repeat_bonus)
-            })
-    }
-
-    pub fn to_rewards(
-        self: &Self,
-        multipliers: &GeneralMultipliers,
-    ) -> impl Iterator<Item = Rewards> {
-        self.to_heists().map(|heist| heist.get_reward(multipliers))
-    }
-}
+use crate::{
+    Strategy,
+    bonuses::Crew,
+    presets::{HeistPreset, StrategyPreset},
+};
 
 #[derive(Clone, Default)]
 pub struct PresetStore {
@@ -102,7 +35,7 @@ impl PresetStore {
                             base_xp: 840_000,
                             in_game_time: 24.0,
                             stealth: true,
-                            crew: Crew(4),
+                            crew: Crew::new(4).unwrap(),
                         },
                     },
                     StrategyPreset {
@@ -114,7 +47,7 @@ impl PresetStore {
                             base_xp: 840_000,
                             in_game_time: 21.0,
                             stealth: true,
-                            crew: Crew(4),
+                            crew: Crew::new(4).unwrap(),
                         },
                     },
                 ],
@@ -135,7 +68,7 @@ impl PresetStore {
                             base_xp: 784_000,
                             in_game_time: 75.0,
                             stealth: false,
-                            crew: Crew(4),
+                            crew: Crew::new(4).unwrap(),
                         },
                     },
                     StrategyPreset {
@@ -147,7 +80,7 @@ impl PresetStore {
                             base_xp: 784_000,
                             in_game_time: 85.0,
                             stealth: false,
-                            crew: Crew(4),
+                            crew: Crew::new(4).unwrap(),
                         },
                     },
                 ],
@@ -168,7 +101,7 @@ impl PresetStore {
                             base_xp: 843_100,
                             in_game_time: 80.0,
                             stealth: true,
-                            crew: Crew(4),
+                            crew: Crew::new(4).unwrap(),
                         },
                     },
                     StrategyPreset {
@@ -180,7 +113,7 @@ impl PresetStore {
                             base_xp: 843_100,
                             in_game_time: 30.0,
                             stealth: true,
-                            crew: Crew(4),
+                            crew: Crew::new(4).unwrap(),
                         },
                     },
                 ],

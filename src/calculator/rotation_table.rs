@@ -1,8 +1,9 @@
 use leptos::prelude::*;
 
 use ::calculator::{
-    GeneralMultipliers, Heist, Level, Rewards, SkillPerk,
-    data::{HeistPreset, PresetStore, Rotation, StrategyPreset},
+    Heist, Level, Rewards, Rotation,
+    bonuses::{GeneralMultipliers, perks::SkillPerk},
+    presets::{HeistPreset, PresetStore, StrategyPreset},
 };
 
 mod select_heist;
@@ -17,6 +18,7 @@ struct RotationData {
     cum_rewards: Rewards,
     cum_time: f32,
     cum_level: Level,
+    cum_rta: f32,
 }
 
 fn rotation_data(
@@ -38,6 +40,7 @@ fn rotation_data(
                 cum_rewards: rewards,
                 cum_time: 0.0,
                 cum_level: Level::from_xp(0),
+                cum_rta: 0.0,
             }
         })
         .scan(

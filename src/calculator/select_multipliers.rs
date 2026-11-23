@@ -1,6 +1,9 @@
 use leptos::prelude::*;
 
-use calculator::{CashPerk, GeneralMultipliers, SkillPerk, XpPerk};
+use calculator::bonuses::{
+    GeneralMultipliers,
+    perks::{CashPerk, SkillPerk, XpPerk},
+};
 
 #[component]
 pub fn SelectMultipliers(
