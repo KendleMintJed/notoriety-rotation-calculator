@@ -1,6 +1,6 @@
 use crate::Strategy;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct StrategyPreset {
     pub id: u32,
     pub name: String,

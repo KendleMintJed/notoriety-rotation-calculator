@@ -1,6 +1,6 @@
 use crate::{Heist, bonuses::RepeatBonus, presets::StrategyPreset};
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct HeistPreset {
     pub id: u32,
     pub name: String,

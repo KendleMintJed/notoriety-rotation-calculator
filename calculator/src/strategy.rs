@@ -1,6 +1,6 @@
 use crate::bonuses::Crew;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Strategy {
     pub base_cash: u32,
     pub base_xp: u32,
