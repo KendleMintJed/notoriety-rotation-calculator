@@ -14,6 +14,7 @@ pub fn RotationTable(
     rotation: ReadSignal<Rotation>,
     set_rotation: WriteSignal<Rotation>,
     multipliers: ReadSignal<GeneralMultipliers>,
+    durations: ReadSignal<RealTimeDurations>,
     infamy_skills: ReadSignal<SkillPerk>,
     store: ReadSignal<PresetStore>,
 ) -> impl IntoView {
@@ -62,7 +63,7 @@ pub fn RotationTable(
                 let rotation = rotation();
                 let multipliers = multipliers();
                 let infamy_skills = infamy_skills();
-                let durations = RealTimeDurations::default();
+                let durations = durations();
 
                 fn display_time(time: f32) -> String {
                     format!("{}:{:0>2}", (time / 60.0) as u32, (time % 60.0).round())

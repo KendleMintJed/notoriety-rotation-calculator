@@ -1,5 +1,6 @@
 use crate::RotationData;
 
+#[derive(Debug, Clone)]
 pub struct RealTimeDurations {
     pub load_heist: f32,
     pub load_lobby: f32,

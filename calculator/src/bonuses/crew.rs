@@ -10,6 +10,10 @@ impl Crew {
         }
     }
 
+    pub fn get_players(self: &Self) -> u8 {
+        self.0
+    }
+
     pub fn get_bonus(self: &Self) -> f32 {
         (self.0 - 1) as f32 * 0.05
     }
