@@ -1,5 +1,9 @@
 pub use {
-    heist::Heist, level::Level, real_time::RealTimeEvents, rewards::Rewards, rotation::Rotation,
+    heist::Heist,
+    level::Level,
+    real_time::{RealTimeDurations, RealTimeEvents},
+    rewards::Rewards,
+    rotation::{Rotation, RotationData},
     strategy::Strategy,
 };
 

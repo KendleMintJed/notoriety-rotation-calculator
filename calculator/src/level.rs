@@ -1,3 +1,4 @@
+#[derive(Debug, Clone)]
 pub struct Level {
     level: u8,
     xp: u32,
