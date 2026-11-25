@@ -142,6 +142,44 @@ impl PresetStore {
                     },
                 ],
             ),
+            (
+                HeistPreset {
+                    id: generate_id(),
+                    name: String::from("Rush Hour"),
+                    stealth_only: false,
+                },
+                vec![StrategyPreset {
+                    id: generate_id(),
+                    name: String::from("Minimum"),
+                    min_skills: 100,
+                    strategy: Strategy {
+                        base_cash: 475_000,
+                        base_xp: 1_288_000,
+                        in_game_time: 53.0,
+                        stealth: true,
+                        crew: Crew::new(4).unwrap(),
+                    },
+                }],
+            ),
+            (
+                HeistPreset {
+                    id: generate_id(),
+                    name: String::from("Diamond Store"),
+                    stealth_only: false,
+                },
+                vec![StrategyPreset {
+                    id: generate_id(),
+                    name: String::from("Minimum"),
+                    min_skills: 30,
+                    strategy: Strategy {
+                        base_cash: 365_200,
+                        base_xp: 352_000,
+                        in_game_time: 11.0,
+                        stealth: false,
+                        crew: Crew::new(4).unwrap(),
+                    },
+                }],
+            ),
         ];
         PresetStore { _id_counter, data }
     }
