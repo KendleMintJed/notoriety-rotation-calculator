@@ -1,6 +1,7 @@
 [workspace]
 members = [
-  "calculator"
+  "calculator",
+  "find_best"
 ]
 resolver="3"
 

@@ -1,0 +1,7 @@
+[package]
+name = "find_best"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+calculator = {path = "../calculator"}
