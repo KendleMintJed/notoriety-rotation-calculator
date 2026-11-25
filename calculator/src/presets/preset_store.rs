@@ -40,12 +40,36 @@ impl PresetStore {
                     },
                     StrategyPreset {
                         id: generate_id(),
+                        name: String::from("Full Sweep"),
+                        min_skills: 33,
+                        strategy: Strategy {
+                            base_cash: 1_079_550,
+                            base_xp: 840_000,
+                            in_game_time: 30.0,
+                            stealth: true,
+                            crew: Crew::new(4).unwrap(),
+                        },
+                    },
+                    StrategyPreset {
+                        id: generate_id(),
                         name: String::from("Minimum"),
                         min_skills: 100,
                         strategy: Strategy {
                             base_cash: 539_550,
                             base_xp: 840_000,
                             in_game_time: 21.0,
+                            stealth: true,
+                            crew: Crew::new(4).unwrap(),
+                        },
+                    },
+                    StrategyPreset {
+                        id: generate_id(),
+                        name: String::from("Minimum"),
+                        min_skills: 33,
+                        strategy: Strategy {
+                            base_cash: 539_550,
+                            base_xp: 840_000,
+                            in_game_time: 25.0,
                             stealth: true,
                             crew: Crew::new(4).unwrap(),
                         },
