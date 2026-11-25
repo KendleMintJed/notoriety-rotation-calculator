@@ -180,6 +180,25 @@ impl PresetStore {
                     },
                 }],
             ),
+            (
+                HeistPreset {
+                    id: generate_id(),
+                    name: String::from("Art Gallery"),
+                    stealth_only: false,
+                },
+                vec![StrategyPreset {
+                    id: generate_id(),
+                    name: String::from("18 bags"),
+                    min_skills: 50,
+                    strategy: Strategy {
+                        base_cash: 1_989_000,
+                        base_xp: 658_000,
+                        in_game_time: 60.0,
+                        stealth: true,
+                        crew: Crew::new(4).unwrap(),
+                    },
+                }],
+            ),
         ];
         PresetStore { _id_counter, data }
     }

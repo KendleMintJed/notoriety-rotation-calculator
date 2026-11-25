@@ -60,19 +60,41 @@ fn find_best_rotation(
         &multipliers,
         skill_perks,
     );
-    let best_rotation = rotations
+    let mut values = rotations
         .iter()
-        .enumerate()
-        .map(|(i, rotation)| {
-            (
-                i,
-                rotation
-                    .to_real_time(multipliers, skill_perks)
-                    .fold(0.0, |cum_rta, event| cum_rta + event.get_time(durations)),
-            )
+        .map(|rotation| {
+            let events = rotation.to_real_time(multipliers, skill_perks);
+            let (cum_rta, cum_cash) = events.fold((0.0, 0), |(cum_rta, cum_cash), event| {
+                let cash = if let RealTimeEvents::Heist(heist) = event.clone() {
+                    heist.rewards.cash
+                } else {
+                    0
+                };
+                (cum_rta + event.get_time(durations), cum_cash + cash)
+            });
+            let value = cum_cash as f32 / cum_rta;
+            (rotation, value)
         })
-        .reduce(|(i1, v1), (i2, v2)| if v1 > v2 { (i2, v2) } else { (i1, v1) });
-    println!("{}", display_rotation(&rotations[best_rotation.unwrap().0]))
+        .collect::<Vec<_>>();
+    values.sort_by(|a, b| {
+        let a = a.1;
+        let b = b.1;
+        if a == b {
+            std::cmp::Ordering::Equal
+        } else if a > b {
+            std::cmp::Ordering::Greater
+        } else {
+            std::cmp::Ordering::Less
+        }
+    });
+    let values = values
+        .iter()
+        .map(|(rot, val)| format!("{}: {}", val, display_rotation(rot)))
+        .collect::<Vec<_>>();
+
+    for value in values {
+        println!("{}", value);
+    }
 }
 
 fn display_rotation(rotation: &Rotation) -> String {
@@ -148,19 +170,29 @@ fn main() {
 
     let heists = vec![
         // Nigthclub
-        (data[0].0.clone(), data[0].1[2].clone()), // min full skills
-        (data[0].0.clone(), data[0].1[3].clone()), // min lvl1 skills
+        (data[0].0.clone(), data[0].1[0].clone()), // fs full skills
+        (data[0].0.clone(), data[0].1[1].clone()), // fs lvl1 skills
+        // Shadow Raid
+        (data[1].0.clone(), data[1].1[0].clone()), // fs full skills
+        (data[1].0.clone(), data[1].1[1].clone()), // fs lvl1 skills
         // Depot
+        (data[2].0.clone(), data[2].1[0].clone()), // fs full skills
         (data[2].0.clone(), data[2].1[1].clone()), // min lvl1 skills
         // Rush Hour
-        (data[3].0.clone(), data[3].1[0].clone()),
+        //(data[3].0.clone(), data[3].1[0].clone()),
         // Diamond Store
-        (data[4].0.clone(), data[4].1[0].clone()),
+        //(data[4].0.clone(), data[4].1[0].clone()),
+        // Art Gallery
+        (data[5].0.clone(), data[5].1[0].clone()),
     ];
+
+    let mut multipliers = GeneralMultipliers::default();
+    multipliers.xp_gamepass = true;
+    multipliers.cash_gamepass = true;
 
     find_best_rotation(
         heists,
-        &GeneralMultipliers::default(),
+        &multipliers,
         &SkillPerk::default(),
         &RealTimeDurations::default(),
         maximize_xp,

@@ -7,6 +7,7 @@ use crate::{
 #[derive(Clone, Default)]
 pub struct Rotation(pub Vec<(HeistPreset, StrategyPreset)>);
 
+#[derive(Debug, Clone)]
 pub struct RotationData {
     pub heist_preset: HeistPreset,
     pub strategy_preset: StrategyPreset,

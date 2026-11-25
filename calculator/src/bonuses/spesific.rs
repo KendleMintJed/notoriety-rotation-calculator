@@ -1,5 +1,6 @@
 use crate::bonuses::{RepeatBonus, mul};
 
+#[derive(Debug, Clone)]
 pub struct SpesificMultipliers {
     pub repeat_bonus: RepeatBonus,
     pub stealth_bonus: bool,

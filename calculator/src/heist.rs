@@ -3,6 +3,7 @@ use crate::{
     bonuses::{GeneralMultipliers, RepeatBonus, SpesificMultipliers},
 };
 
+#[derive(Debug, Clone)]
 pub struct Heist {
     strategy: Strategy,
     multipliers: SpesificMultipliers,

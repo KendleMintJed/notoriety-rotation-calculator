@@ -23,6 +23,7 @@ impl Default for RealTimeDurations {
     }
 }
 
+#[derive(Debug, Clone)]
 pub enum RealTimeEvents {
     Heist(RotationData),
     Lobby,
