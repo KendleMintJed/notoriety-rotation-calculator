@@ -1,5 +1,3 @@
-use crate::RotationData;
-
 #[derive(Debug, Clone)]
 pub struct RealTimeDurations {
     pub load_heist: f32,
@@ -24,24 +22,44 @@ impl Default for RealTimeDurations {
 }
 
 #[derive(Debug, Clone)]
-pub enum RealTimeEvents {
-    Heist(RotationData),
-    Lobby,
-    SkillBreak(u8),
-    Infamy,
+pub struct RealTimeEvents {
+    pub heist: f32,
+    pub lobby: f32,
+    pub skill_break: f32,
+    pub infamy: f32,
 }
 
 impl RealTimeEvents {
-    pub fn get_time(self: &Self, durations: &RealTimeDurations) -> f32 {
-        use RealTimeEvents::*;
-        match self {
-            Heist(heist) => heist.strategy_preset.strategy.in_game_time + durations.load_heist,
-            Lobby => durations.load_lobby + durations.host_lobby,
-            SkillBreak(skills) => {
-                durations.skill_break_overhead
-                    + (*skills as f32 / durations.skill_break_skills_per_sec as f32)
-            }
-            Infamy => durations.infamy,
-        }
+    pub fn time(&self) -> f32 {
+        self.heist + self.lobby + self.skill_break + self.infamy
+    }
+
+    pub fn calculate_heist(in_game_time: f32, durations: &RealTimeDurations) -> f32 {
+        in_game_time + durations.load_heist
+    }
+    pub fn set_heist(self: &mut Self, in_game_time: f32, durations: &RealTimeDurations) {
+        self.heist = Self::calculate_heist(in_game_time, durations);
+    }
+
+    pub fn calculate_lobby(durations: &RealTimeDurations) -> f32 {
+        durations.load_lobby + durations.host_lobby
+    }
+    pub fn set_lobby(self: &mut Self, durations: &RealTimeDurations) {
+        self.lobby = Self::calculate_lobby(durations);
+    }
+
+    pub fn calculate_skill_break(skills: &u8, durations: &RealTimeDurations) -> f32 {
+        durations.skill_break_overhead
+            + (*skills as f32 / durations.skill_break_skills_per_sec as f32)
+    }
+    pub fn set_skill_break(self: &mut Self, skills: &u8, durations: &RealTimeDurations) {
+        self.skill_break = Self::calculate_skill_break(skills, durations);
+    }
+
+    pub fn calculate_infamy(durations: &RealTimeDurations) -> f32 {
+        durations.infamy
+    }
+    pub fn set_infamy(self: &mut Self, durations: &RealTimeDurations) {
+        self.infamy = Self::calculate_infamy(durations);
     }
 }

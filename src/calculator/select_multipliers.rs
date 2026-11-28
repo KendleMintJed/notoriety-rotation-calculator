@@ -6,10 +6,7 @@ use calculator::bonuses::{
 };
 
 #[component]
-pub fn SelectMultipliers(
-    multipliers: RwSignal<GeneralMultipliers>,
-    infamy_skills: RwSignal<SkillPerk>,
-) -> impl IntoView {
+pub fn SelectMultipliers(multipliers: RwSignal<GeneralMultipliers>) -> impl IntoView {
     view! {
         <div>
             <input type="checkbox"
@@ -76,8 +73,9 @@ pub fn SelectMultipliers(
             />"Infamy Xp Boost (15%)"<br/>
             <br/>
             <select
-                prop:value=move || infamy_skills().get_level()
-                on:change:target=move |ev| infamy_skills.set(SkillPerk::new(
+                prop:value=move || multipliers().skill_perks.get_level()
+                on:change:target=move |ev| multipliers.update(
+                    |multipliers| multipliers.skill_perks = SkillPerk::new(
                         ev.target().value().parse::<u8>().unwrap()
                     ).unwrap()
                 )

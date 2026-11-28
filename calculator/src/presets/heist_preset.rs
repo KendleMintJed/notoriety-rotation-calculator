@@ -9,10 +9,10 @@ pub struct HeistPreset {
 
 impl HeistPreset {
     pub fn to_heist(
-        self: &Self,
+        self: Self,
         strategy_preset: StrategyPreset,
         repeat_bonus: RepeatBonus,
     ) -> Heist {
-        Heist::new(strategy_preset.strategy, self.stealth_only, repeat_bonus)
+        Heist::new(self, strategy_preset, repeat_bonus)
     }
 }

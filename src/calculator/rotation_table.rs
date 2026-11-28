@@ -1,9 +1,7 @@
-use leptos::{either::EitherOf4, prelude::*};
+use leptos::prelude::*;
 
 use calculator::{
-    RealTimeDurations, RealTimeEvents, Rotation,
-    bonuses::{GeneralMultipliers, perks::SkillPerk},
-    presets::PresetStore,
+    Level, RealTimeDurations, Rotation, bonuses::GeneralMultipliers, presets::PresetStore,
 };
 
 mod select_heist;
@@ -15,7 +13,6 @@ pub fn RotationTable(
     set_rotation: WriteSignal<Rotation>,
     multipliers: ReadSignal<GeneralMultipliers>,
     durations: ReadSignal<RealTimeDurations>,
-    infamy_skills: ReadSignal<SkillPerk>,
     store: ReadSignal<PresetStore>,
 ) -> impl IntoView {
     view! {
@@ -57,12 +54,11 @@ pub fn RotationTable(
                 <td></td>
                 <td></td>
                 <td>lvl1</td>
-                <td>{move || infamy_skills().get_bonus() as u8 + 1}</td>
+                <td>{move || multipliers().skill_perks.get_bonus() as u8 + 1}</td>
             </tr>
             {move || {
                 let rotation = rotation();
                 let multipliers = multipliers();
-                let infamy_skills = infamy_skills();
                 let durations = durations();
 
                 fn display_time(time: f32) -> String {
@@ -70,90 +66,49 @@ pub fn RotationTable(
                 }
 
                 rotation
-                .to_cum_real_time(&multipliers, &infamy_skills, &durations)
-                .scan(0, |i, (cum_rta, event)| {
-                    let index = *i;
-                    if let RealTimeEvents::Heist(_) = event {
-                        *i += 1;
-                    }
-                    Some((index, (cum_rta, event)))
-                })
-                .map(|(i, (cum_rta, event))| {
-                    let rta = event.get_time(&durations);
-                    match event {
-                        RealTimeEvents::Heist(rotation_data) => {
-                            let strat = rotation_data.heist.get_strategy();
-                            let level = rotation_data.cum_level;
-                            let repeat_percent = (rotation_data.heist.get_multipliers().repeat_bonus.get_bonus() * 100.0) as u32;
-                            EitherOf4::A(view! {
-                                <tr>
-                                    <td>
-                                        <button
-                                            on:click=move |_| set_rotation.update(|rotation| {rotation.0.remove(i);})
-                                        >x</button>
-                                        <button
-                                            on:click=move |_| {
-                                                if i > 0 {set_rotation.update(|rotation| rotation.0.swap(i, i-1))};
-                                            }
-                                        >^</button>
-                                    </td>
-                                    <td>{i + 1}.</td>
-                                    <SelectHeist
-                                        heist_preset=rotation_data.heist_preset
-                                        strategy_preset=rotation_data.strategy_preset
-                                        store
-                                        update=move |heist_preset, strategy_preset| set_rotation
-                                            .update(|rot| rot.0[i] = (heist_preset, strategy_preset))
-                                    />
-                                    <td>{display_time(rta)}</td>
-                                    <td>{display_time(cum_rta)}</td>
-                                    <td>lvl{level.get_level()}</td>
-                                    <td>{level.get_skill_points() + infamy_skills.get_bonus() as u8}pts</td>
-                                    <td>{display_time(strat.in_game_time)}</td>
-                                    <td>{display_time(rotation_data.cum_time)}</td>
-                                    <td>{strat.stealth}</td>
-                                    <td>{repeat_percent}"%"</td>
-                                    <td>{strat.base_cash}</td>
-                                    <td>{rotation_data.rewards.cash}</td>
-                                    <td>{rotation_data.rewards.cash as f32 / strat.in_game_time}</td>
-                                    <td>{rotation_data.cum_rewards.cash}</td>
-                                    <td>{strat.base_xp}</td>
-                                    <td>{rotation_data.rewards.xp}</td>
-                                    <td>{rotation_data.rewards.xp as f32 / strat.in_game_time}</td>
-                                    <td>{rotation_data.cum_rewards.xp}</td>
-                                </tr>
-                            })
-                        },
-                        RealTimeEvents::Lobby => EitherOf4::B(view! {
-                            <tr>
-                                <td></td>
-                                <td></td>
-                                <td>Lobby</td>
-                                <td></td>
-                                <td>{display_time(rta)}</td>
-                                <td>{display_time(cum_rta)}</td>
-                            </tr>
-                        }),
-                        RealTimeEvents::SkillBreak(_) => EitherOf4::C(view! {
-                            <tr>
-                                <td></td>
-                                <td></td>
-                                <td>Skill Break</td>
-                                <td></td>
-                                <td>{display_time(rta)}</td>
-                                <td>{display_time(cum_rta)}</td>
-                            </tr>
-                        }),
-                        RealTimeEvents::Infamy => EitherOf4::D(view! {
-                            <tr>
-                                <td></td>
-                                <td></td>
-                                <td>Infamy</td>
-                                <td></td>
-                                <td>{display_time(rta)}</td>
-                                <td>{display_time(cum_rta)}</td>
-                            </tr>
-                        }),
+                .calculate(&multipliers, &durations)
+                .enumerate()
+                .map(|(i, data)| {
+                    let repeat_percent = (data.heist.get_multipliers().repeat_bonus.get_bonus() * 100.0) as u32;
+                    let level = Level::from_xp(data.cum_rewards.xp);
+                    let strat = &data.heist.get_strategy_preset().strategy;
+                    view! {
+                        <tr>
+                            <td>
+                                <button
+                                    on:click=move |_| set_rotation.update(|rotation| {rotation.0.remove(i);})
+                                >x</button>
+                                <button
+                                    on:click=move |_| {
+                                        if i > 0 {set_rotation.update(|rotation| rotation.0.swap(i, i-1))};
+                                    }
+                                >^</button>
+                            </td>
+                            <td>{i + 1}.</td>
+                            <SelectHeist
+                                heist_preset=data.heist.get_heist_preset().clone()
+                                strategy_preset=data.heist.get_strategy_preset().clone()
+                                store
+                                update=move |heist_preset, strategy_preset| set_rotation
+                                    .update(|rot| rot.0[i] = (heist_preset, strategy_preset))
+                            />
+                            <td>{display_time(data.real_time.time())}</td>
+                            <td>{display_time(data.cum_real_time)}</td>
+                            <td>lvl{level.get_level()}</td>
+                            <td>{level.get_skill_points() + multipliers.skill_perks.get_bonus() as u8}pts</td>
+                            <td>{display_time(strat.in_game_time)}</td>
+                            <td>{display_time(data.cum_in_game_time)}</td>
+                            <td>{strat.stealth}</td>
+                            <td>{repeat_percent}"%"</td>
+                            <td>{strat.base_cash}</td>
+                            <td>{data.rewards.cash}</td>
+                            <td>{data.rewards.cash as f32 / strat.in_game_time}</td>
+                            <td>{data.cum_rewards.cash}</td>
+                            <td>{strat.base_xp}</td>
+                            <td>{data.rewards.xp}</td>
+                            <td>{data.rewards.xp as f32 / strat.in_game_time}</td>
+                            <td>{data.cum_rewards.xp}</td>
+                        </tr>
                     }
                 }).collect::<Vec<_>>()}
             }

@@ -1,6 +1,6 @@
 use crate::bonuses::{
     mul,
-    perks::{CashPerk, XpPerk},
+    perks::{CashPerk, SkillPerk, XpPerk},
 };
 
 #[derive(Clone)]
@@ -15,6 +15,8 @@ pub struct GeneralMultipliers {
     pub xp_gamepass: bool,
     pub xp_infamy_perks: XpPerk,
     pub xp_infamy_boost: bool,
+
+    pub skill_perks: SkillPerk,
 }
 
 impl GeneralMultipliers {
@@ -45,6 +47,7 @@ impl Default for GeneralMultipliers {
             xp_gamepass: false,
             xp_infamy_perks: XpPerk::default(),
             xp_infamy_boost: false,
+            skill_perks: SkillPerk::default(),
         }
     }
 }

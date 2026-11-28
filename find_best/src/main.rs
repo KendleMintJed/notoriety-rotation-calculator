@@ -1,6 +1,6 @@
 use calculator::{
-    Level, RealTimeDurations, RealTimeEvents, Rotation, RotationData,
-    bonuses::{GeneralMultipliers, perks::SkillPerk},
+    RealTimeDurations, Rotation, RotationData,
+    bonuses::GeneralMultipliers,
     presets::{HeistPreset, PresetStore, StrategyPreset},
 };
 
@@ -14,29 +14,23 @@ fn rotation_combinations(
     mut rotation: Rotation,
     choises: &[(HeistPreset, StrategyPreset)],
     multipliers: &GeneralMultipliers,
-    skill_perks: &SkillPerk,
 ) -> Vec<Rotation> {
     let mut rotations = vec![];
     loop {
-        let last = rotation.calculate(multipliers).last();
-        let level = if let Some(last) = last {
-            last.cum_level
-        } else {
-            Level::from_xp(0)
-        };
+        let level = rotation.final_level(multipliers);
 
         if level.get_level() == 100 {
             break;
         }
 
         if choises.len() > 1
-            && level.get_skill_points() + skill_perks.get_bonus() >= choises[1].1.min_skills
+            && level.get_skill_points() + multipliers.skill_perks.get_bonus()
+                >= choises[1].1.min_skills
         {
             rotations.append(&mut rotation_combinations(
                 rotation.clone(),
                 &choises[1..],
                 multipliers,
-                skill_perks,
             ));
         }
         rotation.0.push(choises[0].clone());
@@ -49,47 +43,47 @@ fn rotation_combinations(
 fn find_best_rotation(
     mut choises: Vec<(HeistPreset, StrategyPreset)>,
     multipliers: &GeneralMultipliers,
-    skill_perks: &SkillPerk,
     durations: &RealTimeDurations,
-    predicate: impl Fn((usize, HeistEvent), (usize, HeistEvent)) -> (usize, HeistEvent) + Clone,
 ) {
     choises.sort_by_key(|x| x.1.min_skills);
-    let rotations = rotation_combinations(
-        Rotation(Vec::new()),
-        choises.as_slice(),
-        &multipliers,
-        skill_perks,
-    );
+    let rotations = rotation_combinations(Rotation(Vec::new()), choises.as_slice(), &multipliers);
     let mut values = rotations
         .iter()
         .map(|rotation| {
-            let events = rotation.to_real_time(multipliers, skill_perks);
-            let (cum_rta, cum_cash) = events.fold((0.0, 0), |(cum_rta, cum_cash), event| {
-                let cash = if let RealTimeEvents::Heist(heist) = event.clone() {
-                    heist.rewards.cash
-                } else {
-                    0
-                };
-                (cum_rta + event.get_time(durations), cum_cash + cash)
-            });
-            let value = cum_cash as f32 / cum_rta;
-            (rotation, value)
+            let events = rotation.calculate(multipliers, durations);
+            let (cum_cash, cum_rta) = if let Some(last) = events.last() {
+                (last.cum_rewards.cash, last.cum_real_time)
+            } else {
+                (0, 0.0)
+            };
+            (rotation, cum_cash, cum_rta)
         })
         .collect::<Vec<_>>();
     values.sort_by(|a, b| {
-        let a = a.1;
-        let b = b.1;
+        let a = a.1 as f32 / a.2;
+        let b = b.1 as f32 / b.2;
         if a == b {
             std::cmp::Ordering::Equal
-        } else if a > b {
+        } else if a < b {
             std::cmp::Ordering::Greater
         } else {
             std::cmp::Ordering::Less
         }
     });
+    let mut time = f32::MAX;
     let values = values
         .iter()
-        .map(|(rot, val)| format!("{}: {}", val, display_rotation(rot)))
+        .filter(|(_, _, cum_rta)| {
+            if *cum_rta < time {
+                time = *cum_rta;
+                true
+            } else {
+                false
+            }
+        })
+        .map(|(rot, cum_cash, cum_rta)| {
+            format!("{}: {}", *cum_cash as f32 / cum_rta, display_rotation(rot))
+        })
         .collect::<Vec<_>>();
 
     for value in values {
@@ -118,8 +112,9 @@ fn display_rotation(rotation: &Rotation) -> String {
                             heist_preset.id,
                             strategy_preset.id,
                             format!(
-                                "{} {}p ({}pts)",
+                                "{} {} {}p ({}pts)",
                                 heist_preset.name,
+                                strategy_preset.name,
                                 strategy_preset.strategy.crew.get_players(),
                                 strategy_preset.min_skills
                             ),
@@ -138,15 +133,9 @@ fn display_rotation(rotation: &Rotation) -> String {
 fn display_rotation_combinations(
     mut choises: Vec<(HeistPreset, StrategyPreset)>,
     multipliers: &GeneralMultipliers,
-    skill_perks: &SkillPerk,
 ) {
     choises.sort_by_key(|x| x.1.min_skills);
-    let rotations = rotation_combinations(
-        Rotation(Vec::new()),
-        choises.as_slice(),
-        &multipliers,
-        skill_perks,
-    );
+    let rotations = rotation_combinations(Rotation(Vec::new()), choises.as_slice(), &multipliers);
     rotations
         .iter()
         .map(|rotation| display_rotation(rotation))
@@ -179,9 +168,9 @@ fn main() {
         (data[2].0.clone(), data[2].1[0].clone()), // fs full skills
         (data[2].0.clone(), data[2].1[1].clone()), // min lvl1 skills
         // Rush Hour
-        //(data[3].0.clone(), data[3].1[0].clone()),
+        (data[3].0.clone(), data[3].1[0].clone()),
         // Diamond Store
-        //(data[4].0.clone(), data[4].1[0].clone()),
+        (data[4].0.clone(), data[4].1[0].clone()),
         // Art Gallery
         (data[5].0.clone(), data[5].1[0].clone()),
     ];
@@ -190,11 +179,5 @@ fn main() {
     multipliers.xp_gamepass = true;
     multipliers.cash_gamepass = true;
 
-    find_best_rotation(
-        heists,
-        &multipliers,
-        &SkillPerk::default(),
-        &RealTimeDurations::default(),
-        maximize_xp,
-    );
+    find_best_rotation(heists, &multipliers, &RealTimeDurations::default());
 }

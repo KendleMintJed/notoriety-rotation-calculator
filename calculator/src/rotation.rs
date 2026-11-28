@@ -1,6 +1,6 @@
 use crate::{
     Heist, Level, RealTimeDurations, RealTimeEvents, Rewards,
-    bonuses::{GeneralMultipliers, RepeatBonus, perks::SkillPerk},
+    bonuses::{GeneralMultipliers, RepeatBonus},
     presets::{HeistPreset, StrategyPreset},
 };
 
@@ -9,19 +9,18 @@ pub struct Rotation(pub Vec<(HeistPreset, StrategyPreset)>);
 
 #[derive(Debug, Clone)]
 pub struct RotationData {
-    pub heist_preset: HeistPreset,
-    pub strategy_preset: StrategyPreset,
     pub heist: Heist,
+
     pub rewards: Rewards,
+    pub real_time: RealTimeEvents,
+
     pub cum_rewards: Rewards,
-    pub cum_time: f32,
-    pub cum_level: Level,
+    pub cum_in_game_time: f32,
+    pub cum_real_time: f32,
 }
 
 impl Rotation {
-    pub fn to_repeats(
-        self: &Self,
-    ) -> impl Iterator<Item = (HeistPreset, StrategyPreset, RepeatBonus)> {
+    fn to_heists(self: &Self) -> impl Iterator<Item = Heist> {
         self.0
             .iter()
             .enumerate()
@@ -37,121 +36,103 @@ impl Rotation {
                     }
                 }
 
-                // Never out of range
-                (
+                Heist::new(
                     heist_preset.clone(),
                     strategy_preset.clone(),
+                    // Never out of range
                     RepeatBonus::new(repeat).unwrap(),
                 )
             })
     }
 
-    pub fn to_heists(self: &Self) -> impl Iterator<Item = Heist> {
-        self.to_repeats()
-            .map(|(heist_preset, strategy_preset, repeat_bonus)| {
-                heist_preset.to_heist(strategy_preset, repeat_bonus)
-            })
-    }
-
-    pub fn to_rewards(
-        self: &Self,
-        multipliers: &GeneralMultipliers,
-    ) -> impl Iterator<Item = Rewards> {
-        self.to_heists().map(|heist| heist.get_reward(multipliers))
+    pub fn final_level(self: &Self, multipliers: &GeneralMultipliers) -> Level {
+        Level::from_xp(
+            self.to_heists()
+                .map(|heist| heist.get_reward(multipliers).xp)
+                .sum(),
+        )
     }
 
     pub fn calculate(
         self: &Self,
         multipliers: &GeneralMultipliers,
+        durations: &RealTimeDurations,
     ) -> impl Iterator<Item = RotationData> {
-        self.to_repeats()
-            .map(|(heist_preset, strategy_preset, repeat_bonus)| {
-                let heist = heist_preset.to_heist(strategy_preset.clone(), repeat_bonus);
+        self.to_heists()
+            .map(|heist| {
                 let rewards = heist.get_reward(multipliers);
+
+                let real_time = RealTimeEvents {
+                    heist: heist.get_time() + durations.load_heist,
+                    lobby: durations.load_lobby + durations.host_lobby,
+                    skill_break: 0.0,
+                    infamy: 0.0,
+                };
+
                 RotationData {
-                    heist_preset,
-                    strategy_preset,
                     heist,
-                    rewards: rewards.clone(),
-                    cum_rewards: rewards,
-                    cum_time: 0.0,
-                    cum_level: Level::from_xp(0),
+
+                    rewards,
+                    real_time,
+
+                    cum_rewards: Rewards { cash: 0, xp: 0 },
+                    cum_in_game_time: 0.0,
+                    cum_real_time: 0.0,
                 }
             })
             .scan(
-                (Rewards { cash: 0, xp: 0 }, 0.0),
-                |(reward_state, time_state), mut rotation_data| {
-                    reward_state.cash += rotation_data.rewards.cash;
-                    reward_state.xp += rotation_data.rewards.xp;
+                (Rewards { cash: 0, xp: 0 }, 0.0, 0.0, None, None),
+                |(rewards, igt, rta, last_heist, last_skill), mut data| {
+                    // skill points before this heist
+                    let points = Level::from_xp(rewards.xp).get_skill_points()
+                        + multipliers.skill_perks.get_bonus();
 
-                    *time_state += rotation_data.strategy_preset.strategy.in_game_time;
+                    rewards.xp += data.rewards.xp;
+                    rewards.cash += data.rewards.cash;
+                    data.cum_rewards = rewards.clone();
 
-                    rotation_data.cum_rewards = reward_state.clone();
-                    rotation_data.cum_time = *time_state;
-                    rotation_data.cum_level = Level::from_xp(reward_state.xp);
+                    *igt += data.heist.get_time();
+                    data.cum_in_game_time = *igt;
 
-                    Some(rotation_data)
-                },
-            )
-    }
-
-    pub fn to_real_time(
-        self: &Self,
-        multipliers: &GeneralMultipliers,
-        skill_perks: &SkillPerk,
-    ) -> impl Iterator<Item = RealTimeEvents> {
-        self.calculate(multipliers)
-            .scan(
-                (None, 0u8, Level::from_xp(0)),
-                move |(heist_opt, skill_points, pre_level), data| {
-                    let mut events = vec![];
-                    let mut lobby = false;
-
-                    // Change Heist?
-                    if let Some(heist) = heist_opt {
-                        if *heist != data.heist_preset.id {
-                            events.push(RealTimeEvents::Lobby);
-                            *heist_opt = Some(data.heist_preset.id);
-                            lobby = true;
+                    let this_id = data.heist.get_heist_preset().id;
+                    if let Some(last_id) = last_heist {
+                        if this_id == *last_id {
+                            data.real_time.lobby = 0.0;
                         }
                     } else {
-                        events.push(RealTimeEvents::Lobby);
-                        events.push(RealTimeEvents::Infamy);
-                        *heist_opt = Some(data.heist_preset.id);
-                        lobby = true;
+                        data.real_time.infamy = durations.infamy;
                     }
+                    *last_heist = Some(this_id);
 
-                    // Skill break?
-                    if data.strategy_preset.min_skills > *skill_points {
-                        if !lobby {
-                            events.push(RealTimeEvents::Lobby);
+                    let skilled = data.heist.get_strategy_preset().min_skills;
+                    if let Some((last_points, last_skilled)) = last_skill {
+                        if *last_skilled < skilled {
+                            data.real_time.skill_break = (skilled - *last_skilled) as f32
+                                / durations.skill_break_skills_per_sec as f32;
+                            if *last_points < skilled {
+                                data.real_time.lobby = durations.load_lobby + durations.host_lobby;
+                                data.real_time.skill_break += durations.skill_break_overhead;
+                                // whole skill break
+                                *last_skill = Some((points, skilled));
+                            } else {
+                                // extra skills in last break
+                                *last_skilled = skilled;
+                            }
                         }
-                        events.push(RealTimeEvents::SkillBreak(
-                            data.strategy_preset.min_skills - *skill_points,
-                        ));
-                        *skill_points = pre_level.get_skill_points() + skill_perks.get_bonus();
-                    }
+                    } else {
+                        data.real_time.lobby = durations.load_lobby + durations.host_lobby;
+                        data.real_time.skill_break = skilled as f32
+                            / durations.skill_break_skills_per_sec as f32
+                            + durations.skill_break_overhead;
+                        // pre-skills
+                        *last_skill = Some((points, skilled));
+                    };
 
-                    *pre_level = data.cum_level.clone();
-                    events.push(RealTimeEvents::Heist(data));
+                    *rta += data.real_time.time();
+                    data.cum_real_time = *rta;
 
-                    Some(events)
+                    Some(data)
                 },
             )
-            .flatten()
-    }
-
-    pub fn to_cum_real_time(
-        self: &Self,
-        multipliers: &GeneralMultipliers,
-        skill_perks: &SkillPerk,
-        durations: &RealTimeDurations,
-    ) -> impl Iterator<Item = (f32, RealTimeEvents)> {
-        self.to_real_time(multipliers, skill_perks)
-            .scan(0.0, |cum_rta, event| {
-                let rta = event.get_time(durations);
-                *cum_rta += rta;
-                Some((*cum_rta, event))
-            })
     }
 }
